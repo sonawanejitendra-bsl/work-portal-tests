@@ -1,0 +1,26 @@
+environment: qa
+users:
+  - role: operator
+    username: operator.one
+  - role: operator
+    username: operator.two
+  - role: operator
+    username: operator.three
+  - role: operator
+    username: operator.four
+  - role: reviewer
+    username: reviewer.one
+  - role: reviewer
+    username: reviewer.two
+  - role: reviewer
+    username: reviewer.three
+  - role: reviewer
+    username: reviewer.four
+records:
+  party:
+    - name: Sam Rivera
+      province: ON
+      type: person
+  workitem:
+    - title: Follow up
+      status: Open

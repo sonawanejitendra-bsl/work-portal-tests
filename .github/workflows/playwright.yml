@@ -1,0 +1,78 @@
+name: Playwright
+
+# Use this file when app-tests is its own GitHub repo.
+# Change the install step to the published @core/playwright-framework package.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shardIndex: [1, 2]
+        shardTotal: [2]
+    env:
+      CI: true
+      PROFILE: ci
+      HEALING_MODE: report
+      TEST_USER_OPERATOR: operator.one
+      TEST_PASSWORD_OPERATOR: ${{ secrets.TEST_PASSWORD_OPERATOR }}
+      TEST_USER_REVIEWER: reviewer.one
+      TEST_PASSWORD_REVIEWER: ${{ secrets.TEST_PASSWORD_REVIEWER }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - run: npm install
+      - run: npx playwright install chromium --with-deps
+      - run: npm run typecheck && npm run lint && npm run mcp:check
+      - run: npx playwright test --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: blob-report-${{ matrix.shardIndex }}
+          path: blob-report
+          if-no-files-found: ignore
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: dynamic-report-${{ matrix.shardIndex }}
+          path: playwright-report/dynamic
+          if-no-files-found: ignore
+
+  merge-report:
+    needs: test
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - run: npm install
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: blob-report-*
+          path: all-blob-reports
+          merge-multiple: true
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: dynamic-report-*
+          path: all-dynamic-reports
+          merge-multiple: false
+      - run: npm run report:merge
+      - uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-merged
+          path: playwright-report
+      - name: Optional Teams ping
+        env:
+          TEAMS_WEBHOOK: ${{ secrets.TEAMS_WEBHOOK }}
+        run: node scripts/notify-teams.mjs

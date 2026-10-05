@@ -1,0 +1,30 @@
+{
+  "name": "work-portal-tests",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Application test repo for the work portal. Consumes @core/playwright-framework.",
+  "type": "module",
+  "scripts": {
+    "test": "playwright test",
+    "test:smoke": "playwright test --grep @smoke",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "mcp:check": "node scripts/check-mcp.mjs",
+    "report:merge": "node scripts/merge-shard-reports.mjs",
+    "validate": "npm run typecheck && npm run lint && npm run mcp:check && npm test"
+  },
+  "devDependencies": {
+    "@core/playwright-framework": "github:sonawanejitendra-bsl/core-playwright-framework",
+    "@eslint/js": "^9.36.0",
+    "@playwright/mcp": "^0.0.41",
+    "@playwright/test": "^1.55.0",
+    "@types/node": "^24.5.2",
+    "eslint": "^9.36.0",
+    "eslint-plugin-playwright": "^2.2.2",
+    "typescript": "^5.9.2",
+    "typescript-eslint": "^8.44.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
