@@ -29,6 +29,11 @@ export default defineFrameworkConfig(
     browsers: ["msedge"],
     defaultEnvironment: "qa",
     healing: { mode: "off" },
+    evidence: {
+      trace: "on",
+      screenshot: "on",
+      video: "on",
+    },
     auth: { enabled: false },
     testData: {
       folder: "data/qa",
