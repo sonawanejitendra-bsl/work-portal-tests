@@ -1,29 +1,28 @@
 import { spawn } from "node:child_process";
-import { existsSync, readFileSync } from "node:fs";
+import { copyFileSync, existsSync, readFileSync, readdirSync, unlinkSync } from "node:fs";
 import path from "node:path";
 
-const file = path.resolve("playwright-report", "dynamic", "index.html");
+const dir = path.resolve("playwright-report", "dynamic");
+const file = path.join(dir, "index.html");
 if (!existsSync(file)) {
-  console.error("No dynamic report yet. Run npm run demo first.");
+  console.error("No report yet. Run npm run demo first.");
   process.exit(1);
 }
 
-if (process.platform === "win32") {
-  spawn("cmd", ["/c", "start", "", file], { detached: true, stdio: "ignore" }).unref();
-} else {
-  spawn(process.platform === "darwin" ? "open" : "xdg-open", [file], { detached: true, stdio: "ignore" }).unref();
+const html = readFileSync(file, "utf8");
+if (!html.includes('data-layout="execution-summary"') || !html.includes("Core Playwright · Execution summary")) {
+  console.error("playwright-report\\dynamic\\index.html is still the old page.");
+  console.error("git pull, then npm run demo, then npm run report.");
+  process.exit(1);
 }
 
-const html = readFileSync(file, "utf8");
-if (html.includes('data-layout="execution-summary"')) {
-  console.log("Opened the execution summary report.");
-  console.log(file);
-} else {
-  console.log("This file is still the old report. It was written by the previous framework package.");
-  console.log("In this folder run:");
-  console.log("  rmdir /s /q node_modules\\@core");
-  console.log("  npm install");
-  console.log("  npm run demo");
-  console.log("  npm run report");
-  console.log(file);
+for (const name of readdirSync(dir)) {
+  if (name.startsWith("open-") && name.endsWith(".html")) unlinkSync(path.join(dir, name));
 }
+const opened = path.join(dir, `open-${Date.now()}.html`);
+copyFileSync(file, opened);
+
+const command = `Start-Process -LiteralPath ${JSON.stringify(opened)}`;
+spawn("powershell.exe", ["-NoProfile", "-Command", command], { detached: true, stdio: "ignore" }).unref();
+console.log("Opened a new browser window. The page has a yellow header that says Execution summary.");
+console.log(opened);

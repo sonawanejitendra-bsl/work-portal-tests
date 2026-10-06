@@ -6,13 +6,11 @@ In `.env`, set `HEALING_MODE=recover`. If that line says `off`, the heal test st
 
 ```text
 git pull
-rmdir /s /q node_modules\@core
-npm install
 npm run demo
 npm run report
 ```
 
-The new page has a navy header that says **Execution summary**, a pass-rate ring, and **Recent runs**. If the page does not say that, the old package is still installed. `npm run demo` stops and prints the reinstall commands in that case.
+Close any report tab that was already open. `npm run report` opens a new window. The new page has a yellow header that says **Execution summary**. The report file is written by this repo, so you do not need to reinstall the framework package to see it.
 
 `npm run report` opens `playwright-report\dynamic\index.html`. It does not use port 9323. Skip `npx playwright show-report` while that port is already taken.
 

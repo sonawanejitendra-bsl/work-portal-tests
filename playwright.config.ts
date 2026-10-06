@@ -1,23 +1,31 @@
+import { fileURLToPath } from "node:url";
 import { defineFrameworkConfig } from "@core/playwright-framework";
 import type { PlaywrightTestConfig } from "@playwright/test";
 
 /**
  * JD Edwards is the application under test.
  * Host: environments.qa. The login test opens /jde/E1Menu.maf?
+ * The execution summary page is written by this repo, not by the installed package.
  */
+const summaryReporter = fileURLToPath(new URL("./scripts/execution-summary-reporter.mjs", import.meta.url));
+
 const extra: PlaywrightTestConfig = {
   testDir: "./tests",
   testMatch: /jde-.*\.spec\.ts/,
+  reporter: process.env.CI
+    ? [
+        ["blob", { outputDir: "blob-report" }],
+        ["list"],
+        ["junit", { outputFile: "test-results/junit.xml" }],
+        [summaryReporter],
+      ]
+    : [
+        ["list"],
+        ["html", { open: "never" }],
+        ["junit", { outputFile: "test-results/junit.xml" }],
+        [summaryReporter],
+      ],
 };
-
-if (process.env.CI) {
-  extra.reporter = [
-    ["blob", { outputDir: "blob-report" }],
-    ["list"],
-    ["junit", { outputFile: "test-results/junit.xml" }],
-    ["@core/playwright-framework/reporter"],
-  ];
-}
 
 export default defineFrameworkConfig(
   {

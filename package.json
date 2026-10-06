@@ -6,7 +6,6 @@
   "type": "module",
   "scripts": {
     "test": "playwright test",
-    "predemo": "node scripts/check-report-package.mjs",
     "demo": "playwright test tests/jde-heal-demo.spec.ts tests/jde-mcp-example.spec.ts --workers=1",
     "install:ffmpeg": "playwright install ffmpeg",
     "report": "node scripts/open-report.mjs",
