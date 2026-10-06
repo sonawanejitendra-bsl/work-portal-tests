@@ -4,12 +4,15 @@ Screenshots and traces are saved. Video is off, so ffmpeg is not required. Edge 
 
 In `.env`, set `HEALING_MODE=recover`. If that line says `off`, the heal test stops after 3 seconds on the missing Login button and never clicks Sign In. `.env` overrides `playwright.config.ts`.
 
-```powershell
+```text
 git pull
+rmdir /s /q node_modules\@core
 npm install
 npm run demo
 npm run report
 ```
+
+The new page has a navy header that says **Execution summary**, a pass-rate ring, and **Recent runs**. If the page does not say that, the old package is still installed. `npm run demo` stops and prints the reinstall commands in that case.
 
 `npm run report` opens `playwright-report\dynamic\index.html`. It does not use port 9323. Skip `npx playwright show-report` while that port is already taken.
 

@@ -6,6 +6,7 @@
   "type": "module",
   "scripts": {
     "test": "playwright test",
+    "predemo": "node scripts/check-report-package.mjs",
     "demo": "playwright test tests/jde-heal-demo.spec.ts tests/jde-mcp-example.spec.ts --workers=1",
     "install:ffmpeg": "playwright install ffmpeg",
     "report": "node scripts/open-report.mjs",
@@ -17,7 +18,7 @@
     "validate": "npm run typecheck && npm run lint && npm run mcp:check && npm test"
   },
   "devDependencies": {
-    "@core/playwright-framework": "github:sonawanejitendra-bsl/core-playwright-framework",
+    "@core/playwright-framework": "github:sonawanejitendra-bsl/core-playwright-framework#3619b243c973147ce9855a261f09bd7e44fbe8c2",
     "@eslint/js": "^9.36.0",
     "@playwright/mcp": "^0.0.41",
     "@playwright/test": "^1.55.0",
