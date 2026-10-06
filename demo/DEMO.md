@@ -18,11 +18,14 @@ In the report, the Self-healing panel says the step was healed, names the old lo
 
 ## 2. Playwright MCP
 
-MCP is for writing a test, not for `npm test`.
+MCP writes a test. It does not run `npm test`.
 
-1. In Cursor, confirm the playwright server in `.cursor/mcp.json` is connected.
+Show this in VS Code with GitHub Copilot. Copilot starts Playwright MCP from `.vscode/mcp.json`.
+
+1. Open this folder in VS Code and start a Copilot chat.
 2. Paste the prompt at the top of `tests/jde-mcp-example.spec.ts`.
-3. MCP opens the real portal and reads the page. The file `tests/jde-mcp-example.spec.ts` is the test that comes back. It uses the same Sign In, Health & Safety Incidents, and Incident Case Inquiry names.
+3. Copilot calls the MCP browser tools: it opens the sign-in page, reads the snapshot, and clicks **View Job Status**.
+4. The file `tests/jde-mcp-example.spec.ts` is the test that comes back. It is a different case from auto-heal: sign in, click **View Job Status**, and check that **Submitted Job Search** is open. Nothing is submitted or deleted.
 
 ## 3. Dynamic report
 
