@@ -1,18 +1,12 @@
 # Demo script
 
-Video in the report needs Playwright’s ffmpeg once per machine. Edge is already used, so Chromium is not required.
+Screenshots and traces are saved. Video is off, so ffmpeg is not required. Edge is already used, so Chromium is not required.
 
 ```powershell
-npx playwright install ffmpeg
+git pull
+npm install
 npm run demo
 npm run report
-```
-
-If the ffmpeg download fails on the company certificate check, run this first, then install again:
-
-```powershell
-set NODE_TLS_REJECT_UNAUTHORIZED=0
-npx playwright install ffmpeg
 ```
 
 `npm run report` opens `playwright-report\dynamic\index.html`. It does not use port 9323. Skip `npx playwright show-report` while that port is already taken.

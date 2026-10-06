@@ -32,7 +32,7 @@ export default defineFrameworkConfig(
     evidence: {
       trace: "on",
       screenshot: "on",
-      video: "on",
+      video: "off",
     },
     auth: { enabled: false },
     testData: {
