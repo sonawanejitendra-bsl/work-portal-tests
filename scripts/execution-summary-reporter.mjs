@@ -224,9 +224,13 @@ function buildHtml(payload) {
     .detail td { background: #F8FAFC; }
     img.full, video { max-width: min(720px, 100%); border: 1px solid var(--line); border-radius: 8px; background: #0E1726; }
     pre { white-space: pre-wrap; background: var(--navy); color: #E8EEF4; padding: 12px; border-radius: 8px; max-height: 200px; overflow: auto; }
-    .bars { display: flex; align-items: flex-end; gap: 8px; height: 88px; }
-    .bar { flex: 1; background: var(--blue); border-radius: 4px 4px 0 0; min-height: 4px; position: relative; }
-    .bar span { position: absolute; top: -16px; left: 0; right: 0; text-align: center; font-size: 10px; color: var(--muted); }
+    .trend { background: #F8FAFC; border: 1px solid var(--line); border-radius: 10px; padding: 8px 8px 0; }
+    .runs { display: grid; grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); gap: 8px; margin-top: 12px; }
+    .run { border: 1px solid var(--line); border-top: 3px solid var(--pass); border-radius: 8px; padding: 8px; background: #fff; }
+    .run.fail { border-top-color: var(--fail); }
+    .run.mid { border-top-color: #C47B00; }
+    .run span, .run small { display: block; color: var(--muted); font-size: 11px; }
+    .run b { font-size: 18px; }
     .gates { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
     .gate { border: 1px solid var(--line); border-radius: 10px; padding: 12px; }
     .gate b { color: var(--pass); }
@@ -275,8 +279,8 @@ function buildHtml(payload) {
     </section>
     <section class="panel">
       <h2>Recent runs</h2>
-      <p class="lead">Pass rate for the last runs kept on this machine.</p>
-      <div class="bars" id="trend"></div>
+      <p class="lead">Pass rate for the last 10 runs saved on this machine. Green is 90% or higher.</p>
+      <div id="trend"></div>
     </section>
     <section class="panel">
       <h2>Tests</h2>
@@ -397,11 +401,8 @@ function buildHtml(payload) {
         ['Evidence', evidencePct + '%', evidencePct === 100 || s.failed === 0],
         ['Duration', minutes + ' min', minutes <= 25],
       ].map(([name, actual, ok]) => '<div class="gate"><div>' + name + '</div><b>' + (ok ? 'Passed' : 'Failed') + '</b><div>' + actual + '</div></div>').join('');
-      const history = (data.history && data.history.length ? data.history : [{ passed: s.passed, total: s.total }]).slice(-10);
-      $('trend').innerHTML = history.map((point) => {
-        const rate = point.total ? Math.round((point.passed / point.total) * 100) : 0;
-        return '<div class="bar" style="height:' + Math.max(rate, 6) + '%"><span>' + rate + '%</span></div>';
-      }).join('');
+      const history = (data.history && data.history.length ? data.history : [{ passed: s.passed, total: s.total, failed: s.failed }]).slice(-10);
+      $('trend').innerHTML = trendChart(history);
       $('rows').innerHTML = rows.map((r, index) => {
         const thumbs = shots(r).slice(0, 6).map((a) => '<img src="' + esc(a.href) + '" alt="' + esc(a.label) + '">').join('');
         return '<tr class="test-row" data-i="' + index + '"><td>' + esc(r.title) + '<div class="muted">' + esc(fileName(r.file)) + ' · ' + esc(r.app) + '</div></td><td>' +
@@ -414,6 +415,39 @@ function buildHtml(payload) {
           detail.hidden = !detail.hidden;
         });
       });
+    }
+    function trendChart(history) {
+      const w = 640, h = 168, padL = 36, padR = 12, padT = 22, padB = 28;
+      const innerW = w - padL - padR;
+      const innerH = h - padT - padB;
+      const n = history.length;
+      const rateOf = (point) => point.total ? Math.round((point.passed / point.total) * 100) : 0;
+      const rates = history.map(rateOf);
+      const x = (i) => n === 1 ? padL + innerW / 2 : padL + (innerW * i) / (n - 1);
+      const y = (rate) => padT + innerH - (rate / 100) * innerH;
+      const grids = [0, 50, 100].map((mark) => {
+        const gy = y(mark);
+        return '<line x1="' + padL + '" y1="' + gy + '" x2="' + (w - padR) + '" y2="' + gy + '" stroke="#E2E8F0"/>' +
+          '<text x="' + (padL - 6) + '" y="' + (gy + 4) + '" text-anchor="end" font-size="11" fill="#5C6B7A">' + mark + '</text>';
+      }).join('');
+      const line = n > 1 ? '<polyline points="' + rates.map((rate, i) => x(i) + ',' + y(rate)).join(' ') + '" fill="none" stroke="#1F8A70" stroke-width="2.5"/>' : '';
+      const area = n > 1
+        ? '<path d="M ' + x(0) + ' ' + (padT + innerH) + ' ' + rates.map((rate, i) => 'L ' + x(i) + ' ' + y(rate)).join(' ') + ' L ' + x(n - 1) + ' ' + (padT + innerH) + ' Z" fill="#1F8A70" opacity="0.12"/>'
+        : '';
+      const dots = rates.map((rate, i) => {
+        const color = rate >= 90 ? '#1B7A4A' : rate === 0 ? '#B42318' : '#C47B00';
+        return '<circle cx="' + x(i) + '" cy="' + y(rate) + '" r="5" fill="' + color + '" stroke="#fff" stroke-width="2"/>' +
+          '<text x="' + x(i) + '" y="' + (y(rate) - 10) + '" text-anchor="middle" font-size="11" font-weight="700" fill="' + color + '">' + rate + '%</text>';
+      }).join('');
+      const cards = history.map((point, i) => {
+        const rate = rates[i];
+        const tone = rate >= 90 ? 'pass' : rate === 0 ? 'fail' : 'mid';
+        const when = point.at ? String(point.at).slice(5, 16).replace('T', ' ') : '';
+        return '<div class="run ' + tone + '"><span>Run ' + (i + 1) + (when ? ' · ' + when : '') + '</span><b>' + rate + '%</b><small>' +
+          (Number(point.passed) || 0) + '/' + (Number(point.total) || 0) + ' passed · ' + (Number(point.failed) || 0) + ' failed</small></div>';
+      }).join('');
+      return '<div class="trend"><svg viewBox="0 0 ' + w + ' ' + h + '" width="100%" height="180" role="img" aria-label="Pass rate over recent runs">' +
+        grids + area + line + dots + '</svg></div><div class="runs">' + cards + '</div>';
     }
     ['f-app','f-tag','f-browser','f-status','f-text'].forEach((id) => $(id).addEventListener('input', render));
     render();
