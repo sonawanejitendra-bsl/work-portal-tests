@@ -47,8 +47,11 @@ The app URL is `environments.qa` in `playwright.config.ts`:
 `tests/jde-login.spec.ts` opens `/jde/E1Menu.maf?`, signs in as **TESTT02**, and a second test signs out. The browser is Microsoft Edge (`BROWSERS=msedge`), so Playwright's Chromium download is not required.
 
 ```powershell
+npm install
 npm test
 ```
+
+If `npm install` stops with `SELF_SIGNED_CERT_IN_CHAIN`, the company network certificate blocked GitHub. This folder's `.npmrc` sets `strict-ssl=false` for that. Pull the latest repo, then install again. `playwright is not recognized` only means the install did not finish.
 
 ## From scratch on another computer
 
