@@ -2,6 +2,8 @@
 
 Screenshots and traces are saved. Video is off, so ffmpeg is not required. Edge is already used, so Chromium is not required.
 
+In `.env`, set `HEALING_MODE=recover`. If that line says `off`, the heal test stops after 3 seconds on the missing Login button and never clicks Sign In. `.env` overrides `playwright.config.ts`.
+
 ```powershell
 git pull
 npm install
