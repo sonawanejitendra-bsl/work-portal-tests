@@ -7,7 +7,7 @@ import type { PlaywrightTestConfig } from "@playwright/test";
  */
 const extra: PlaywrightTestConfig = {
   testDir: "./tests",
-  testMatch: /jde-login\.spec\.ts/,
+  testMatch: /jde-.*\.spec\.ts/,
 };
 
 if (process.env.CI) {
@@ -28,7 +28,7 @@ export default defineFrameworkConfig(
     roles: ["jde"],
     browsers: ["msedge"],
     defaultEnvironment: "qa",
-    healing: { mode: "off" },
+    healing: { mode: "recover", minScore: 0.4 },
     evidence: {
       trace: "on",
       screenshot: "on",

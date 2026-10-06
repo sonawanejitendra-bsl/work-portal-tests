@@ -67,6 +67,49 @@ export class JdeLoginPage {
     await this.page.locator("a, button, div, span").filter({ hasText: /^Sign In$/ }).last().click();
   }
 
+  async fillCredentials(): Promise<void> {
+    await this.open();
+    await this.userId().fill(JDE_USER_ID);
+    await this.password().fill(JDE_PASSWORD);
+  }
+
+  /** JD Edwards draws menus and tiles inside iframes, so the label is sought in every frame. */
+  async clickText(name: string): Promise<void> {
+    const deadline = Date.now() + 30_000;
+    while (Date.now() < deadline) {
+      for (const frame of this.page.frames()) {
+        const clicked = await frame
+          .evaluate((label) => {
+            const hits = [...document.querySelectorAll("a, button, span, div, td, li")].filter(
+              (el) => (el.textContent ?? "").replace(/\s+/g, " ").trim() === label,
+            );
+            const visible = hits.filter((el) => {
+              const style = window.getComputedStyle(el);
+              const box = el.getBoundingClientRect();
+              return (
+                style.visibility !== "hidden" &&
+                style.display !== "none" &&
+                Number(style.opacity) > 0 &&
+                box.width > 8 &&
+                box.height > 8 &&
+                box.bottom > 0 &&
+                box.right > 0
+              );
+            });
+            const target = visible.sort((a, b) => a.getBoundingClientRect().width - b.getBoundingClientRect().width)[0];
+            if (!target) return false;
+            target.scrollIntoView({ block: "nearest", inline: "center" });
+            target.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true, view: window }));
+            return true;
+          }, name)
+          .catch(() => false);
+        if (clicked) return;
+      }
+      await this.page.waitForTimeout(400);
+    }
+    throw new Error(`Could not find "${name}"`);
+  }
+
   async login(environment = "JTR920", role = "*ALL"): Promise<void> {
     await this.open();
     await this.userId().fill(JDE_USER_ID);
@@ -78,20 +121,11 @@ export class JdeLoginPage {
   }
 
   async logout(): Promise<void> {
-    const signOut = this.page
-      .getByRole("link", { name: /sign out|log out/i })
-      .or(this.page.getByRole("button", { name: /sign out|log out/i }));
-
-    if (!(await signOut.first().isVisible())) {
-      await this.page.getByText(JDE_USER_ID, { exact: true }).click();
-    }
-
-    await signOut.first().click();
+    await this.page.getByText(/Financial\/Distribution Company/).first().click();
+    await this.page.getByText("Sign Out", { exact: true }).last().click();
 
     const confirm = this.page.getByRole("button", { name: /^(yes|ok)$/i });
-    if (await confirm.isVisible()) {
-      await confirm.click();
-    }
+    if (await confirm.isVisible().catch(() => false)) await confirm.click();
 
     await this.userId().waitFor({ state: "visible", timeout: 60_000 });
   }
