@@ -24,8 +24,8 @@ Show this in VS Code with GitHub Copilot. Copilot starts Playwright MCP from `.v
 
 1. Open this folder in VS Code and start a Copilot chat.
 2. Paste the prompt at the top of `tests/jde-mcp-example.spec.ts`.
-3. Copilot calls the MCP browser tools: it opens the sign-in page, reads the snapshot, and clicks **View Job Status**.
-4. The file `tests/jde-mcp-example.spec.ts` is the test that comes back. It is a different case from auto-heal: sign in, click **View Job Status**, and check that **Submitted Job Search** is open. Nothing is submitted or deleted.
+3. Copilot calls the MCP browser tools: it opens the sign-in page, reads the snapshot, and clicks **Health & Safety Incidents**, then **Incident Case Inquiry**.
+4. The file `tests/jde-mcp-example.spec.ts` is the test that comes back. It signs in with the real Sign In button and opens the same inquiry. Nothing is saved. Auto-heal is the other test, where the old Login button is missing.
 
 ## 3. Dynamic report
 
