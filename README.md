@@ -38,6 +38,18 @@ app-tests/                     ← this product (work-portal)
 
 Still not in this repo (and not faked): an AI pull-request reviewer, and a live Guidewire app. Point `environments.qa` at real QA when you have it and stop the dummy `webServer`.
 
+## JD Edwards login and logout
+
+The app URL is `environments.qa` in `playwright.config.ts`:
+
+`https://mirajde-dvtrweb.birlasoft.com`
+
+`tests/jde-login.spec.ts` opens `/jde/E1Menu.maf?`, signs in as **TESTT02**, and a second test signs out. The browser is Microsoft Edge (`BROWSERS=msedge`), so Playwright's Chromium download is not required.
+
+```powershell
+npm test
+```
+
 ## From scratch on another computer
 
 You need Node 20+ and Git. No JDK. Sign in to GitHub first, because both repos are private.

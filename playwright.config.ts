@@ -2,16 +2,12 @@ import { defineFrameworkConfig } from "@core/playwright-framework";
 import type { PlaywrightTestConfig } from "@playwright/test";
 
 /**
- * Application test config. App name, URLs and roles live here.
- * Shared behaviour (profiles, reporters, projects) comes from the core package.
+ * JD Edwards is the application under test.
+ * Host: environments.qa. The login test opens /jde/E1Menu.maf?
  */
 const extra: PlaywrightTestConfig = {
   testDir: "./tests",
-  webServer: {
-    command: "node dummy-portal/server.mjs",
-    url: "http://127.0.0.1:4174/login",
-    reuseExistingServer: !process.env.CI,
-  },
+  testMatch: /jde-login\.spec\.ts/,
 };
 
 if (process.env.CI) {
@@ -25,24 +21,22 @@ if (process.env.CI) {
 
 export default defineFrameworkConfig(
   {
-    app: "work-portal",
+    app: "jde",
     environments: {
-      qa: "http://127.0.0.1:4174",
+      qa: "https://mirajde-dvtrweb.birlasoft.com",
     },
-    roles: ["operator", "reviewer"],
-    browsers: ["chromium"],
+    roles: ["jde"],
+    browsers: ["msedge"],
     defaultEnvironment: "qa",
-    healing: { mode: "report" },
-    auth: {
-      enabled: true,
-      loginPath: "/login",
-      sessionCheckPath: "/api/me",
-      reloginOnce: true,
-    },
+    healing: { mode: "off" },
+    auth: { enabled: false },
     testData: {
       folder: "data/qa",
-      cleanup: true,
+      cleanup: false,
     },
   },
-  extra,
+  {
+    ...extra,
+    use: { ignoreHTTPSErrors: true },
+  },
 );
