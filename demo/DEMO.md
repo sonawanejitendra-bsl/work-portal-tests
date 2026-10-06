@@ -1,18 +1,21 @@
 # Demo script
 
-Run from this folder:
+Video in the report needs Playwright’s ffmpeg once per machine. Edge is already used, so Chromium is not required.
 
 ```powershell
-npm test
-```
-
-Then open the dynamic report. Do not use `npx playwright show-report` if port 9323 is already taken.
-
-```powershell
+npx playwright install ffmpeg
+npm run demo
 npm run report
 ```
 
-That opens `playwright-report\dynamic\index.html` in the browser. It does not start a server.
+If the ffmpeg download fails on the company certificate check, run this first, then install again:
+
+```powershell
+set NODE_TLS_REJECT_UNAUTHORIZED=0
+npx playwright install ffmpeg
+```
+
+`npm run report` opens `playwright-report\dynamic\index.html`. It does not use port 9323. Skip `npx playwright show-report` while that port is already taken.
 
 ## 1. Auto-heal
 
