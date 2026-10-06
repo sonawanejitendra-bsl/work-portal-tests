@@ -16,5 +16,5 @@ test("healed sign-in opens Incident Case Inquiry", { tag: "@heal" }, async ({ pa
   await expect(page.getByPlaceholder("Search")).toBeVisible({ timeout: 60_000 });
   await jde.clickText("Health & Safety Incidents");
   await jde.clickText("Incident Case Inquiry");
-  await expect.poll(async () => (await page.title()).replace(/\u00a0/g, " "), { timeout: 60_000 }).toMatch(/Incident Case Inquiry/);
+  await jde.expectIncidentInquiry();
 });

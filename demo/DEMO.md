@@ -6,7 +6,13 @@ Run from this folder:
 npm test
 ```
 
-Then open `playwright-report\dynamic\index.html`.
+Then open the dynamic report. Do not use `npx playwright show-report` if port 9323 is already taken.
+
+```powershell
+npm run report
+```
+
+That opens `playwright-report\dynamic\index.html` in the browser. It does not start a server.
 
 ## 1. Auto-heal
 

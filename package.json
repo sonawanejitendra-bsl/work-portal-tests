@@ -6,6 +6,8 @@
   "type": "module",
   "scripts": {
     "test": "playwright test",
+    "demo": "playwright test tests/jde-heal-demo.spec.ts tests/jde-mcp-example.spec.ts --workers=1",
+    "report": "node scripts/open-report.mjs",
     "test:smoke": "playwright test --grep @smoke",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",

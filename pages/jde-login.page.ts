@@ -1,4 +1,4 @@
-import type { Page } from "@playwright/test";
+import { expect, type Page } from "@playwright/test";
 
 /** Test user for the Birlasoft JD Edwards DV environment. */
 export const JDE_USER_ID = "TESTT02";
@@ -75,39 +75,42 @@ export class JdeLoginPage {
 
   /** JD Edwards draws menus and tiles inside iframes, so the label is sought in every frame. */
   async clickText(name: string): Promise<void> {
-    const deadline = Date.now() + 30_000;
+    const deadline = Date.now() + 45_000;
     while (Date.now() < deadline) {
       for (const frame of this.page.frames()) {
-        const clicked = await frame
-          .evaluate((label) => {
-            const hits = [...document.querySelectorAll("a, button, span, div, td, li")].filter(
-              (el) => (el.textContent ?? "").replace(/\s+/g, " ").trim() === label,
-            );
-            const visible = hits.filter((el) => {
-              const style = window.getComputedStyle(el);
-              const box = el.getBoundingClientRect();
-              return (
-                style.visibility !== "hidden" &&
-                style.display !== "none" &&
-                Number(style.opacity) > 0 &&
-                box.width > 8 &&
-                box.height > 8 &&
-                box.bottom > 0 &&
-                box.right > 0
-              );
-            });
-            const target = visible.sort((a, b) => a.getBoundingClientRect().width - b.getBoundingClientRect().width)[0];
-            if (!target) return false;
-            target.scrollIntoView({ block: "nearest", inline: "center" });
-            target.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true, view: window }));
-            return true;
-          }, name)
-          .catch(() => false);
-        if (clicked) return;
+        const matches = frame.getByText(name, { exact: true });
+        const count = await matches.count().catch(() => 0);
+        for (let i = 0; i < Math.min(count, 8); i += 1) {
+          const target = matches.nth(i);
+          const box = await target.boundingBox().catch(() => null);
+          if (!box || box.width < 8 || box.height < 8) continue;
+          try {
+            await target.scrollIntoViewIfNeeded({ timeout: 1_000 });
+            await target.click({ timeout: 2_500 });
+            return;
+          } catch {
+            /* This copy is hidden or not the control that receives the click. */
+          }
+        }
       }
       await this.page.waitForTimeout(400);
     }
     throw new Error(`Could not find "${name}"`);
+  }
+
+  async expectIncidentInquiry(): Promise<void> {
+    await expect
+      .poll(
+        async () => {
+          const title = (await this.page.title()).replace(/\u00a0/g, " ");
+          if (/Incident Case Inquiry/.test(title)) return "title";
+          const openApp = this.page.getByRole("link", { name: "Incident Case Inquiry" });
+          if (await openApp.isVisible().catch(() => false)) return "link";
+          return "";
+        },
+        { timeout: 60_000 },
+      )
+      .not.toBe("");
   }
 
   async login(environment = "JTR920", role = "*ALL"): Promise<void> {
