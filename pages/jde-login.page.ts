@@ -1,4 +1,5 @@
 import { expect, type Page } from "@playwright/test";
+import { captureStep } from "./capture-step.js";
 
 /** Test user for the Birlasoft JD Edwards DV environment. */
 export const JDE_USER_ID = "TESTT02";
@@ -121,6 +122,7 @@ export class JdeLoginPage {
     await this.ensureValue("Role", role);
     await this.clickSignIn();
     await this.userId().waitFor({ state: "hidden", timeout: 60_000 });
+    await captureStep(this.page, "Signed in");
   }
 
   async logout(): Promise<void> {

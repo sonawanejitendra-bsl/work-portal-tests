@@ -1,4 +1,5 @@
 import { expect, type Frame, type Page } from "@playwright/test";
+import { captureStep } from "./capture-step.js";
 
 /**
  * Summary Availability is JD Edwards application P41202,
@@ -17,20 +18,26 @@ export class SummaryAvailabilityPage {
     await expect
       .poll(async () => (await this.page.title()).replace(/\u00a0/g, " "), { timeout: 60_000 })
       .toContain("Work With Item Availability");
+    await captureStep(this.page, "Summary Availability open");
   }
 
-  async search(itemNumber: string, branchPlant: string): Promise<void> {
+  async search(itemNumber: string, branchPlant: string, resultName = "Find results"): Promise<void> {
     const form = await this.form();
     const item = form.locator("input[title='Item Number']");
     const branch = form.locator("input[title='Branch/Plant']");
     await item.click();
     await item.fill(itemNumber);
     await item.press("Tab");
+    await captureStep(this.page, "Item number entered");
     await branch.click();
     await branch.fill(branchPlant);
     await branch.press("Tab");
+    await captureStep(this.page, "Branch/Plant entered");
     await form.locator("input[title='Omit Zero Quantities']").check();
+    await captureStep(this.page, "Omit zero quantities");
     await form.locator("#hc_Find").click();
+    await form.getByRole("row", { name: /^No Attachment P/ }).first().waitFor({ state: "visible", timeout: 30_000 }).catch(() => undefined);
+    await captureStep(this.page, resultName);
   }
 
   async readOnHand(branchPlant: string): Promise<string> {

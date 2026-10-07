@@ -1,4 +1,5 @@
 import { expect, type Frame, type Page } from "@playwright/test";
+import { captureStep } from "./capture-step.js";
 
 /**
  * Inventory Adjustments (P4114).
@@ -16,6 +17,7 @@ export class InventoryAdjustmentsPage {
     await workWith.locator("#hc_Add").click();
 
     const entry = await this.frameContaining("input[title='G/L Date']");
+    await captureStep(this.page, "Adjustment form");
     const branch = entry.locator("input[title='Branch/Plant']").first();
     await branch.click();
     await branch.fill(branchPlant);
@@ -39,6 +41,7 @@ export class InventoryAdjustmentsPage {
     await units.click();
     await units.fill(quantity);
     await units.press("Tab");
+    await captureStep(this.page, `Adjustment ${quantity} entered`);
     await entry.locator("#hc_OK").click();
 
     await expect
@@ -49,6 +52,7 @@ export class InventoryAdjustmentsPage {
         return "";
       }, { timeout: 30_000 })
       .toBe("saved");
+    await captureStep(this.page, `Adjustment ${quantity} saved`);
   }
 
   private async fastPath(program: string): Promise<void> {

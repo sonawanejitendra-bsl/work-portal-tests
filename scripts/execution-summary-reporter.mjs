@@ -219,8 +219,12 @@ function buildHtml(payload) {
     tr.test-row { cursor: pointer; }
     .pill { display: inline-block; padding: 2px 8px; border-radius: 99px; font-size: 12px; font-weight: 650; background: #EEF2F6; }
     .pill.pass { color: var(--pass); background: #E7F6EE; } .pill.fail { color: var(--fail); background: #FDECEC; }
-    .thumbs { display: flex; gap: 6px; flex-wrap: wrap; }
-    .thumbs img { width: 72px; height: 48px; object-fit: cover; border: 1px solid var(--line); border-radius: 4px; background: #0E1726; }
+    .thumbs { display: flex; gap: 8px; flex-wrap: wrap; }
+    .shot { margin: 0; width: 148px; }
+    .shot img { width: 148px; height: 92px; object-fit: cover; object-position: top; border: 1px solid var(--line); border-radius: 4px; background: #0E1726; }
+    .shot figcaption { margin-top: 4px; font-size: 11px; color: var(--muted); line-height: 1.3; }
+    .step-full { margin: 0 0 14px; }
+    .step-full figcaption { font-size: 13px; font-weight: 650; margin-bottom: 4px; }
     .detail td { background: #F8FAFC; }
     img.full, video { max-width: min(720px, 100%); border: 1px solid var(--line); border-radius: 8px; background: #0E1726; }
     pre { white-space: pre-wrap; background: var(--navy); color: #E8EEF4; padding: 12px; border-radius: 8px; max-height: 200px; overflow: auto; }
@@ -354,7 +358,7 @@ function buildHtml(payload) {
         return '<p class="muted">No screenshot, trace, or log was saved for this test.</p>';
       }
       return '<div class="evidence">' + [
-        images.length ? '<div class="block"><h3>Screenshot</h3>' + images.map((a) => '<p><a href="' + esc(a.href) + '" target="_blank"><img class="full" src="' + esc(a.href) + '" alt="' + esc(a.label) + '"></a></p>').join('') + '</div>' : '',
+        images.length ? '<div class="block"><h3>Steps</h3>' + images.map((a) => '<figure class="step-full"><figcaption>' + esc(a.label) + '</figcaption><a href="' + esc(a.href) + '" target="_blank"><img class="full" src="' + esc(a.href) + '" alt="' + esc(a.label) + '"></a></figure>').join('') + '</div>' : '',
         videos.length ? '<div class="block"><h3>Video</h3>' + videos.map((a) => '<video controls src="' + esc(a.href) + '"></video>').join('') + '</div>' : '',
         traces.length ? '<div class="block"><h3>Trace</h3><p>' + traces.map((a) => '<a href="' + esc(a.href) + '">' + esc(a.label) + '</a>').join(', ') + '</p></div>' : '',
         logText ? '<div class="block"><h3>Log</h3><pre>' + esc(logText) + '</pre></div>' : '',
@@ -404,7 +408,7 @@ function buildHtml(payload) {
       const history = (data.history && data.history.length ? data.history : [{ passed: s.passed, total: s.total, failed: s.failed }]).slice(-10);
       $('trend').innerHTML = trendChart(history);
       $('rows').innerHTML = rows.map((r, index) => {
-        const thumbs = shots(r).slice(0, 6).map((a) => '<img src="' + esc(a.href) + '" alt="' + esc(a.label) + '">').join('');
+        const thumbs = shots(r).map((a) => '<figure class="shot"><img src="' + esc(a.href) + '" alt="' + esc(a.label) + '"><figcaption>' + esc(a.label) + '</figcaption></figure>').join('');
         return '<tr class="test-row" data-i="' + index + '"><td>' + esc(r.title) + '<div class="muted">' + esc(fileName(r.file)) + ' · ' + esc(r.app) + '</div></td><td>' +
           pill(r.status) + '</td><td>' + esc(r.project) + '</td><td>' + duration(r.durationMs) + '</td><td><div class="thumbs">' + thumbs +
           '</div><div class="muted">' + esc(evidenceLabel(r)) + '</div></td></tr><tr class="detail" id="d-' + index + '" hidden><td colspan="5">' + evidenceHtml(r) + '</td></tr>';

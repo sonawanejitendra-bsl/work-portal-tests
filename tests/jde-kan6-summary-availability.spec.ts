@@ -23,7 +23,7 @@ test("KAN-6 summary availability shows the updated on-hand quantity", { tag: "@k
   const adjustments = new InventoryAdjustmentsPage(page);
   await adjustments.adjust("220", "10", "1");
   await availability.open();
-  await availability.search("220", "10");
+  await availability.search("220", "10", "Updated find results");
   await availability.expectOnHand("10", String(before + 1));
 
   await adjustments.adjust("220", "10", "-1");
