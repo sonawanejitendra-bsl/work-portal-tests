@@ -33,35 +33,47 @@ export class SummaryAvailabilityPage {
     await form.locator("#hc_Find").click();
   }
 
-  /**
-   * Data row cells are: checkbox, attachment, primary, location, branch, on hand.
-   * The total row is excluded because its location cell says TOTAL.
-   */
-  async expectOnHand(branchPlant: string, quantity: string): Promise<void> {
+  async readOnHand(branchPlant: string): Promise<string> {
+    let quantity = "";
     await expect
       .poll(
         async () => {
-          for (const frame of this.page.frames()) {
-            const rows = frame.getByRole("row", { name: /^No Attachment P/ });
-            const count = await rows.count().catch(() => 0);
-            for (let i = 0; i < count; i += 1) {
-              const cells = rows.nth(i).getByRole("cell");
-              const branch = ((await cells.nth(4).innerText().catch(() => "")) || "").trim();
-              const onHand = ((await cells.nth(5).innerText().catch(() => "")) || "").trim();
-              if (branch === branchPlant) return onHand;
-            }
-          }
-          return "";
+          quantity = await this.onHand(branchPlant);
+          return quantity;
         },
         { timeout: 30_000 },
       )
-      .toBe(quantity);
+      .not.toBe("");
+    return quantity;
+  }
+
+  /**
+   * Data row cells are: checkbox, attachment, primary, location, branch, on hand.
+   * The total row is excluded because its name starts with TOTAL.
+   */
+  async expectOnHand(branchPlant: string, quantity: string): Promise<void> {
+    await expect.poll(async () => this.onHand(branchPlant), { timeout: 30_000 }).toBe(quantity);
+  }
+
+  private async onHand(branchPlant: string): Promise<string> {
+    for (const frame of [...this.page.frames()].reverse()) {
+      const rows = frame.getByRole("row", { name: /^No Attachment P/ });
+      const count = await rows.count().catch(() => 0);
+      for (let i = 0; i < count; i += 1) {
+        const cells = rows.nth(i).getByRole("cell");
+        const branch = ((await cells.nth(4).innerText().catch(() => "")) || "").trim();
+        const onHand = ((await cells.nth(5).innerText().catch(() => "")) || "").trim();
+        if (branch === branchPlant && onHand) return onHand;
+      }
+    }
+    return "";
   }
 
   private async form(): Promise<Frame> {
     const deadline = Date.now() + 60_000;
     while (Date.now() < deadline) {
-      for (const frame of this.page.frames()) {
+      const frames = [...this.page.frames()].reverse();
+      for (const frame of frames) {
         const item = frame.locator("input[title='Item Number']");
         if (await item.count().catch(() => 0)) return frame;
       }
