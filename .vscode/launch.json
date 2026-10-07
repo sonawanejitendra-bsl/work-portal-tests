@@ -1,0 +1,12 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "KAN-6 and self-heal login",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "npx playwright test tests/jde-heal-demo.spec.ts tests/jde-kan6-summary-availability.spec.ts --workers=1",
+      "cwd": "${workspaceFolder}"
+    }
+  ]
+}
