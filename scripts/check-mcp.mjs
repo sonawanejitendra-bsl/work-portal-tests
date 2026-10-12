@@ -22,15 +22,14 @@ try {
   fail("Could not resolve @playwright/mcp. Run npm install in the app test repo.");
 }
 
-const cursorCfg = path.join(root, ".cursor", "mcp.json");
 const vscodeCfg = path.join(root, ".vscode", "mcp.json");
-if (!existsSync(cursorCfg) || !existsSync(vscodeCfg)) {
-  fail("Missing .cursor/mcp.json or .vscode/mcp.json");
+if (!existsSync(vscodeCfg)) {
+  fail("Missing .vscode/mcp.json");
 }
 
-const cursor = JSON.parse(readFileSync(cursorCfg, "utf8"));
-if (!cursor.mcpServers?.playwright?.args?.includes("@playwright/mcp")) {
-  fail("Cursor MCP config does not point at @playwright/mcp");
+const vscode = JSON.parse(readFileSync(vscodeCfg, "utf8"));
+if (!vscode.servers?.playwright?.args?.includes("@playwright/mcp")) {
+  fail("VS Code MCP config does not point at @playwright/mcp");
 }
 
 console.log("[mcp:check] Playwright MCP is installed and config files are valid.");

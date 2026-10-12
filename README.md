@@ -33,7 +33,7 @@ app-tests/                     ← this product (work-portal)
 | Merged HTML report | `npm run report:merge` |
 | TeamCity | `ci/teamcity.md` |
 | Teams ping | `scripts/notify-teams.mjs` if `TEAMS_WEBHOOK` is set |
-| MCP authoring | `.cursor/mcp.json`, `.vscode/mcp.json` |
+| MCP authoring | `.vscode/mcp.json` |
 | Own portal under test | `dummy-portal/` on port **4174** |
 
 Still not in this repo (and not faked): an AI pull-request reviewer, and a live Guidewire app. Point `environments.qa` at real QA when you have it and stop the dummy `webServer`.
