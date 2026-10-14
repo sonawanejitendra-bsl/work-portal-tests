@@ -2,7 +2,7 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "KAN-6 and self-heal login",
+      "name": "KAN-6 with healed login",
       "type": "node-terminal",
       "request": "launch",
       "command": "npm run demo",

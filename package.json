@@ -6,8 +6,8 @@
   "type": "module",
   "scripts": {
     "test": "playwright test",
-    "demo": "playwright test tests/jde-heal-demo.spec.ts tests/jde-kan6-summary-availability.spec.ts --workers=1",
-    "kan": "playwright test tests/jde-heal-demo.spec.ts tests/jde-kan6-summary-availability.spec.ts --workers=1",
+    "demo": "playwright test tests/jde-kan6-summary-availability.spec.ts --workers=1",
+    "kan": "playwright test tests/jde-kan6-summary-availability.spec.ts --workers=1",
     "install:ffmpeg": "playwright install ffmpeg",
     "report": "node scripts/open-report.mjs",
     "test:smoke": "playwright test --grep @smoke",
