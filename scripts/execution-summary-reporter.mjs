@@ -297,6 +297,14 @@ function buildHtml(payload) {
     table { width: 100%; border-collapse: collapse; }
     th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--line); vertical-align: top; font-size: 13px; }
     th { font-size: 11px; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
+    table.grid { border: 1px solid #C5D0DC; border-radius: 8px; overflow: hidden; }
+    table.grid th, table.grid td { border: 1px solid #D5DEE8; }
+    table.grid th { background: var(--navy); color: #fff; }
+    table.grid tbody tr:nth-child(even of .step-row) td,
+    table.grid tbody tr:nth-child(even of .test-row) td { background: #F7FAFC; }
+    table.grid tr.step-row:hover td, table.grid tr.test-row:hover td { background: #EEF4FB; }
+    table.grid th.num, table.grid td.num { width: 56px; text-align: center; font-variant-numeric: tabular-nums; }
+    table.grid td.num { font-weight: 700; color: var(--navy); }
     code { font-family: Consolas, monospace; font-size: 12px; word-break: break-word; }
     .ok { color: var(--pass); font-weight: 700; }
     .filters { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
@@ -315,13 +323,6 @@ function buildHtml(payload) {
     .detail td { background: #F8FAFC; }
     img.full, video { max-width: min(720px, 100%); border: 1px solid var(--line); border-radius: 8px; background: #0E1726; }
     pre { white-space: pre-wrap; background: var(--navy); color: #E8EEF4; padding: 12px; border-radius: 8px; max-height: 200px; overflow: auto; }
-    .trend { background: #F8FAFC; border: 1px solid var(--line); border-radius: 10px; padding: 8px 8px 0; }
-    .runs { display: grid; grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); gap: 8px; margin-top: 12px; }
-    .run { border: 1px solid var(--line); border-top: 3px solid var(--pass); border-radius: 8px; padding: 8px; background: #fff; }
-    .run.fail { border-top-color: var(--fail); }
-    .run.mid { border-top-color: #C47B00; }
-    .run span, .run small { display: block; color: var(--muted); font-size: 11px; }
-    .run b { font-size: 18px; }
     .gates { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
     .gate { border: 1px solid var(--line); border-radius: 10px; padding: 12px; }
     .gate b { color: var(--pass); }
@@ -359,7 +360,7 @@ function buildHtml(payload) {
     </section>
     <section class="panel">
       <h2>Healing detail</h2>
-      <table>
+      <table class="grid">
         <thead><tr><th>Step</th><th>Looked for</th><th>Clicked instead</th><th>Score</th><th>Result</th></tr></thead>
         <tbody id="heal"></tbody>
       </table>
@@ -369,15 +370,10 @@ function buildHtml(payload) {
       <div class="gates" id="gates"></div>
     </section>
     <section class="panel">
-      <h2>Recent runs</h2>
-      <p class="lead">Pass rate for the last 10 runs saved on this machine. Green is 90% or higher.</p>
-      <div id="trend"></div>
-    </section>
-    <section class="panel">
       <h2>Steps</h2>
       <p class="lead">Open a step to see its screenshot. A healed sign-in also shows what the test looked for and what it clicked.</p>
-      <table>
-        <thead><tr><th>Step</th><th>Status</th><th>Test</th><th>Duration</th></tr></thead>
+      <table class="grid">
+        <thead><tr><th class="num">#</th><th>Step</th><th>Status</th><th>Test</th><th>Duration</th></tr></thead>
         <tbody id="step-rows"></tbody>
       </table>
     </section>
@@ -391,8 +387,8 @@ function buildHtml(payload) {
         <div><label for="f-status">Status</label><select id="f-status"></select></div>
         <div><label for="f-text">Title contains</label><input id="f-text" placeholder="filter text" /></div>
       </div>
-      <table>
-        <thead><tr><th>Test</th><th>Status</th><th>Browser</th><th>Duration</th><th>Evidence</th></tr></thead>
+      <table class="grid">
+        <thead><tr><th class="num">#</th><th>Test</th><th>Status</th><th>Browser</th><th>Duration</th><th>Evidence</th></tr></thead>
         <tbody id="rows"></tbody>
       </table>
     </section>
@@ -516,20 +512,24 @@ function buildHtml(payload) {
         ['Evidence', evidencePct + '%', evidencePct === 100 || s.failed === 0],
         ['Duration', minutes + ' min', minutes <= 25],
       ].map(([name, actual, ok]) => '<div class="gate"><div>' + name + '</div><b>' + (ok ? 'Passed' : 'Failed') + '</b><div>' + actual + '</div></div>').join('');
-      const history = (data.history && data.history.length ? data.history : [{ passed: s.passed, total: s.total, failed: s.failed }]).slice(-10);
-      $('trend').innerHTML = trendChart(history);
       $('rows').innerHTML = rows.map((r, index) => {
         const thumbs = shots(r).map((a) => '<figure class="shot"><img src="' + esc(a.href) + '" alt="' + esc(a.label) + '"><figcaption>' + esc(a.label) + '</figcaption></figure>').join('');
-        return '<tr class="test-row" data-i="' + index + '"><td>' + esc(r.title) + '<div class="muted">' + esc(fileName(r.file)) + ' · ' + esc(r.app) + '</div></td><td>' +
+        const number = String(index + 1).padStart(2, '0');
+        return '<tr class="test-row" data-i="' + index + '"><td class="num">' + number + '</td><td>' + esc(r.title) + '<div class="muted">' + esc(fileName(r.file)) + ' · ' + esc(r.app) + '</div></td><td>' +
           pill(r.status) + '</td><td>' + esc(r.project) + '</td><td>' + duration(r.durationMs) + '</td><td><div class="thumbs">' + thumbs +
-          '</div><div class="muted">' + esc(evidenceLabel(r)) + '</div></td></tr><tr class="detail" id="d-' + index + '" hidden><td colspan="5">' + evidenceHtml(r) + '</td></tr>';
-      }).join('') || '<tr><td colspan="5" class="muted">No tests match these filters.</td></tr>';
-      const stepItems = rows.flatMap((testRow) => (testRow.steps || []).map((step) => Object.assign({ testTitle: testRow.title }, step)));
+          '</div><div class="muted">' + esc(evidenceLabel(r)) + '</div></td></tr><tr class="detail" id="d-' + index + '" hidden><td colspan="6">' + evidenceHtml(r) + '</td></tr>';
+      }).join('') || '<tr><td colspan="6" class="muted">No tests match these filters.</td></tr>';
+      const stepItems = [];
+      rows.forEach((testRow) => {
+        (testRow.steps || []).forEach((step, stepIndex) => {
+          stepItems.push(Object.assign({ testTitle: testRow.title, number: String(stepIndex + 1).padStart(2, '0') }, step));
+        });
+      });
       $('step-rows').innerHTML = stepItems.map((step, index) => {
-        return '<tr class="step-row" data-s="' + index + '"><td>' + esc(step.title) + '</td><td>' + pill(step.status) +
+        return '<tr class="step-row" data-s="' + index + '"><td class="num">' + esc(step.number) + '</td><td>' + esc(step.title) + '</td><td>' + pill(step.status) +
           '</td><td>' + esc(step.testTitle) + '</td><td>' + duration(step.durationMs) + '</td></tr><tr class="detail" id="s-' +
-          index + '" hidden><td colspan="4">' + stepDetail(step) + '</td></tr>';
-      }).join('') || '<tr><td colspan="4" class="muted">No steps were recorded.</td></tr>';
+          index + '" hidden><td colspan="5">' + stepDetail(step) + '</td></tr>';
+      }).join('') || '<tr><td colspan="5" class="muted">No steps were recorded.</td></tr>';
       document.querySelectorAll('.test-row').forEach((tr) => {
         tr.addEventListener('click', () => {
           const detail = document.getElementById('d-' + tr.getAttribute('data-i'));
@@ -542,39 +542,6 @@ function buildHtml(payload) {
           detail.hidden = !detail.hidden;
         });
       });
-    }
-    function trendChart(history) {
-      const w = 640, h = 168, padL = 36, padR = 12, padT = 22, padB = 28;
-      const innerW = w - padL - padR;
-      const innerH = h - padT - padB;
-      const n = history.length;
-      const rateOf = (point) => point.total ? Math.round((point.passed / point.total) * 100) : 0;
-      const rates = history.map(rateOf);
-      const x = (i) => n === 1 ? padL + innerW / 2 : padL + (innerW * i) / (n - 1);
-      const y = (rate) => padT + innerH - (rate / 100) * innerH;
-      const grids = [0, 50, 100].map((mark) => {
-        const gy = y(mark);
-        return '<line x1="' + padL + '" y1="' + gy + '" x2="' + (w - padR) + '" y2="' + gy + '" stroke="#E2E8F0"/>' +
-          '<text x="' + (padL - 6) + '" y="' + (gy + 4) + '" text-anchor="end" font-size="11" fill="#5C6B7A">' + mark + '</text>';
-      }).join('');
-      const line = n > 1 ? '<polyline points="' + rates.map((rate, i) => x(i) + ',' + y(rate)).join(' ') + '" fill="none" stroke="#1F8A70" stroke-width="2.5"/>' : '';
-      const area = n > 1
-        ? '<path d="M ' + x(0) + ' ' + (padT + innerH) + ' ' + rates.map((rate, i) => 'L ' + x(i) + ' ' + y(rate)).join(' ') + ' L ' + x(n - 1) + ' ' + (padT + innerH) + ' Z" fill="#1F8A70" opacity="0.12"/>'
-        : '';
-      const dots = rates.map((rate, i) => {
-        const color = rate >= 90 ? '#1B7A4A' : rate === 0 ? '#B42318' : '#C47B00';
-        return '<circle cx="' + x(i) + '" cy="' + y(rate) + '" r="5" fill="' + color + '" stroke="#fff" stroke-width="2"/>' +
-          '<text x="' + x(i) + '" y="' + (y(rate) - 10) + '" text-anchor="middle" font-size="11" font-weight="700" fill="' + color + '">' + rate + '%</text>';
-      }).join('');
-      const cards = history.map((point, i) => {
-        const rate = rates[i];
-        const tone = rate >= 90 ? 'pass' : rate === 0 ? 'fail' : 'mid';
-        const when = point.at ? String(point.at).slice(5, 16).replace('T', ' ') : '';
-        return '<div class="run ' + tone + '"><span>Run ' + (i + 1) + (when ? ' · ' + when : '') + '</span><b>' + rate + '%</b><small>' +
-          (Number(point.passed) || 0) + '/' + (Number(point.total) || 0) + ' passed · ' + (Number(point.failed) || 0) + ' failed</small></div>';
-      }).join('');
-      return '<div class="trend"><svg viewBox="0 0 ' + w + ' ' + h + '" width="100%" height="180" role="img" aria-label="Pass rate over recent runs">' +
-        grids + area + line + dots + '</svg></div><div class="runs">' + cards + '</div>';
     }
     ['f-app','f-tag','f-browser','f-status','f-text'].forEach((id) => $(id).addEventListener('input', render));
     render();
