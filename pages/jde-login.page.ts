@@ -70,8 +70,11 @@ export class JdeLoginPage {
 
   async fillCredentials(): Promise<void> {
     await this.open();
+    await this.userId().waitFor({ state: "visible", timeout: 30_000 });
+    await captureStep(this.page, "Sign in page");
     await this.userId().fill(JDE_USER_ID);
     await this.password().fill(JDE_PASSWORD);
+    await captureStep(this.page, "Credentials entered");
   }
 
   /** JD Edwards draws menus and tiles inside iframes, so the label is sought in every frame. */
@@ -116,8 +119,11 @@ export class JdeLoginPage {
 
   async login(environment = "JTR920", role = "*ALL"): Promise<void> {
     await this.open();
+    await this.userId().waitFor({ state: "visible", timeout: 30_000 });
+    await captureStep(this.page, "Sign in page");
     await this.userId().fill(JDE_USER_ID);
     await this.password().fill(JDE_PASSWORD);
+    await captureStep(this.page, "Credentials entered");
     await this.ensureValue("Environment", environment);
     await this.ensureValue("Role", role);
     await this.clickSignIn();

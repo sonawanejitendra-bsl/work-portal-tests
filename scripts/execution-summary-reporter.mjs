@@ -52,12 +52,14 @@ export default class ExecutionSummaryReporter {
         logs,
       },
       files,
+      steps: serializeSteps(result.steps),
     });
   }
 
   async onEnd() {
     const mediaDir = path.join(this.outputDir, "media");
     await mkdir(mediaDir, { recursive: true });
+    const healing = await readHealing();
     const tests = [];
     for (const item of this.pending) {
       const assets = [];
@@ -65,9 +67,9 @@ export default class ExecutionSummaryReporter {
         const saved = await copyAsset(mediaDir, file, () => this.mediaCount++);
         if (saved) assets.push(saved);
       }
-      tests.push({ ...item.row, assets });
+      const imageByLabel = new Map(assets.filter((asset) => asset.kind === "image").map((asset) => [asset.label, asset]));
+      tests.push({ ...item.row, assets, steps: buildUserSteps(item.steps, imageByLabel, healing, item.row.status) });
     }
-    const healing = await readHealing();
     const payload = {
       generatedAt: new Date().toISOString(),
       app: process.env.APP || "jde",
@@ -101,6 +103,90 @@ export default class ExecutionSummaryReporter {
     await writeFile(historyFile, JSON.stringify(payload.history, null, 2), "utf8");
     console.log(`Execution summary report: ${htmlFile}`);
   }
+}
+
+function serializeSteps(steps) {
+  return (steps || []).map((step) => ({
+    title: step.title,
+    category: step.category,
+    durationMs: step.duration || 0,
+    startTime: step.startTime instanceof Date ? step.startTime.toISOString() : String(step.startTime || ""),
+    error: step.error?.message || "",
+    attachments: (step.attachments || []).map((attachment) => ({ name: attachment.name })),
+    steps: serializeSteps(step.steps),
+  }));
+}
+
+function buildUserSteps(steps, imageByLabel, healing, testStatus) {
+  const rows = [];
+  collectTestSteps(steps, imageByLabel, rows);
+  const used = new Set(rows.flatMap((row) => row.images.map((image) => image.href)));
+  for (const image of imageByLabel.values()) {
+    if (used.has(image.href) || image.label === "screenshot") continue;
+    rows.push({
+      title: image.label,
+      status: testStatus === "failed" ? "failed" : "passed",
+      durationMs: 0,
+      startTime: "",
+      error: "",
+      images: [image],
+      healing: [],
+    });
+  }
+  assignHealing(rows, healing);
+  return rows;
+}
+
+function collectTestSteps(steps, imageByLabel, rows) {
+  for (const step of steps || []) {
+    if (step.category === "test.step") {
+      rows.push({
+        title: step.title,
+        status: step.error ? "failed" : "passed",
+        durationMs: step.durationMs,
+        startTime: step.startTime,
+        error: step.error,
+        images: imagesForStep(step, imageByLabel),
+        healing: [],
+      });
+    }
+    collectTestSteps(step.steps, imageByLabel, rows);
+  }
+}
+
+function imagesForStep(step, imageByLabel) {
+  const images = [];
+  const add = (name) => {
+    const saved = imageByLabel.get(name);
+    if (saved && !images.some((image) => image.href === saved.href)) images.push(saved);
+  };
+  for (const attachment of step.attachments || []) add(attachment.name);
+  for (const child of step.steps || []) {
+    if (child.category === "test.step") continue;
+    for (const attachment of child.attachments || []) add(attachment.name);
+    for (const image of imagesForStep(child, imageByLabel)) {
+      if (!images.some((item) => item.href === image.href)) images.push(image);
+    }
+  }
+  return images;
+}
+
+function assignHealing(rows, healing) {
+  const leftovers = [];
+  for (const event of healing || []) {
+    const at = Date.parse(event.at);
+    const matches = rows.filter((row) => {
+      const start = Date.parse(row.startTime);
+      if (!Number.isFinite(start) || !Number.isFinite(at)) return false;
+      return at >= start - 1000 && at <= start + (row.durationMs || 0) + 2000;
+    });
+    matches.sort((a, b) => (a.durationMs || 0) - (b.durationMs || 0));
+    if (matches[0]) matches[0].healing.push(event);
+    else leftovers.push(event);
+  }
+  if (!leftovers.length) return;
+  const signIn = rows.find((row) => /sign in/i.test(row.title)) || rows[0];
+  if (signIn) signIn.healing.push(...leftovers);
 }
 
 function textOf(chunks) {
@@ -216,7 +302,8 @@ function buildHtml(payload) {
     .filters { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
     label { font-size: 11px; color: var(--muted); display: block; margin-bottom: 4px; }
     select, input { padding: 7px 8px; min-width: 140px; border: 1px solid var(--line); border-radius: 8px; font: inherit; background: #fff; }
-    tr.test-row { cursor: pointer; }
+    tr.test-row, tr.step-row { cursor: pointer; }
+    .mini-heal { margin-top: 10px; }
     .pill { display: inline-block; padding: 2px 8px; border-radius: 99px; font-size: 12px; font-weight: 650; background: #EEF2F6; }
     .pill.pass { color: var(--pass); background: #E7F6EE; } .pill.fail { color: var(--fail); background: #FDECEC; }
     .thumbs { display: flex; gap: 8px; flex-wrap: wrap; }
@@ -287,6 +374,14 @@ function buildHtml(payload) {
       <div id="trend"></div>
     </section>
     <section class="panel">
+      <h2>Steps</h2>
+      <p class="lead">Open a step to see its screenshot. A healed sign-in also shows what the test looked for and what it clicked.</p>
+      <table>
+        <thead><tr><th>Step</th><th>Status</th><th>Test</th><th>Duration</th></tr></thead>
+        <tbody id="step-rows"></tbody>
+      </table>
+    </section>
+    <section class="panel">
       <h2>Tests</h2>
       <p class="lead">Open a row for the full screenshot, trace, and log. Evidence is listed on each row.</p>
       <div class="filters">
@@ -340,6 +435,22 @@ function buildHtml(payload) {
       return true;
     }
     function shots(row) { return (row.assets || []).filter((a) => a.kind === 'image'); }
+    function healTable(events) {
+      if (!events || !events.length) return '';
+      return '<div class="mini-heal"><h3>Healing</h3><table><thead><tr><th>Looked for</th><th>Clicked instead</th><th>Score</th><th>Result</th></tr></thead><tbody>' +
+        events.map((h) => {
+          const best = (h.suggestions || [])[0];
+          return '<tr><td><code>' + esc(h.missed || '') + '</code></td><td>' + esc(best && best.match ? best.match : '') +
+            '</td><td>' + esc(best ? best.score + ' · ' + best.reason : '') + '</td><td class="' + (h.applied ? 'ok' : '') + '">' +
+            (h.applied ? 'Healed' : 'Suggestion only') + '</td></tr>';
+        }).join('') + '</tbody></table></div>';
+    }
+    function stepDetail(step) {
+      const images = (step.images || []).map((a) => '<figure class="step-full"><figcaption>' + esc(a.label) + '</figcaption><a href="' + esc(a.href) + '" target="_blank"><img class="full" src="' + esc(a.href) + '" alt="' + esc(a.label) + '"></a></figure>').join('');
+      const error = step.error ? '<pre>' + esc(step.error) + '</pre>' : '';
+      const body = images + healTable(step.healing) + error;
+      return body || '<p class="muted">No screenshot for this step.</p>';
+    }
     function evidenceLabel(row) {
       const assets = row.assets || [];
       const parts = [];
@@ -413,9 +524,21 @@ function buildHtml(payload) {
           pill(r.status) + '</td><td>' + esc(r.project) + '</td><td>' + duration(r.durationMs) + '</td><td><div class="thumbs">' + thumbs +
           '</div><div class="muted">' + esc(evidenceLabel(r)) + '</div></td></tr><tr class="detail" id="d-' + index + '" hidden><td colspan="5">' + evidenceHtml(r) + '</td></tr>';
       }).join('') || '<tr><td colspan="5" class="muted">No tests match these filters.</td></tr>';
+      const stepItems = rows.flatMap((testRow) => (testRow.steps || []).map((step) => Object.assign({ testTitle: testRow.title }, step)));
+      $('step-rows').innerHTML = stepItems.map((step, index) => {
+        return '<tr class="step-row" data-s="' + index + '"><td>' + esc(step.title) + '</td><td>' + pill(step.status) +
+          '</td><td>' + esc(step.testTitle) + '</td><td>' + duration(step.durationMs) + '</td></tr><tr class="detail" id="s-' +
+          index + '" hidden><td colspan="4">' + stepDetail(step) + '</td></tr>';
+      }).join('') || '<tr><td colspan="4" class="muted">No steps were recorded.</td></tr>';
       document.querySelectorAll('.test-row').forEach((tr) => {
         tr.addEventListener('click', () => {
           const detail = document.getElementById('d-' + tr.getAttribute('data-i'));
+          detail.hidden = !detail.hidden;
+        });
+      });
+      document.querySelectorAll('.step-row').forEach((tr) => {
+        tr.addEventListener('click', () => {
+          const detail = document.getElementById('s-' + tr.getAttribute('data-s'));
           detail.hidden = !detail.hidden;
         });
       });

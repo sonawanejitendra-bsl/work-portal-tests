@@ -16,22 +16,38 @@ const signIn = { id: "sign-in", role: "button" as const, name: "Sign In" };
 test("KAN-6 summary availability shows the updated on-hand quantity", { tag: ["@kan6", "@heal"] }, async ({ page }) => {
   test.setTimeout(300_000);
   const jde = new JdeLoginPage(page);
-  await jde.fillCredentials();
-  await healedClick(page, page.getByRole("button", { name: "Login" }), signIn);
-  await jde.userId().waitFor({ state: "hidden", timeout: 60_000 });
-  await captureStep(page, "Signed in");
-  await expect(page).toHaveTitle(/JD Edwards/);
-
   const availability = new SummaryAvailabilityPage(page);
-  await availability.open();
-  await availability.search("220", "10");
-  const before = Number(await availability.readOnHand("10"));
-
   const adjustments = new InventoryAdjustmentsPage(page);
-  await adjustments.adjust("220", "10", "1");
-  await availability.open();
-  await availability.search("220", "10", "Updated find results");
-  await availability.expectOnHand("10", String(before + 1));
+  let before = 0;
 
-  await adjustments.adjust("220", "10", "-1");
+  await test.step("Sign in", async () => {
+    await jde.fillCredentials();
+    await healedClick(page, page.getByRole("button", { name: "Login" }), signIn);
+    await jde.userId().waitFor({ state: "hidden", timeout: 60_000 });
+    await captureStep(page, "Signed in");
+    await expect(page).toHaveTitle(/JD Edwards/);
+  });
+
+  await test.step("Open Summary Availability", async () => {
+    await availability.open();
+  });
+
+  await test.step("Search availability", async () => {
+    await availability.search("220", "10");
+    before = Number(await availability.readOnHand("10"));
+  });
+
+  await test.step("Adjust quantity up", async () => {
+    await adjustments.adjust("220", "10", "1");
+  });
+
+  await test.step("Confirm on-hand increased", async () => {
+    await availability.open();
+    await availability.search("220", "10", "Updated find results");
+    await availability.expectOnHand("10", String(before + 1));
+  });
+
+  await test.step("Restore quantity", async () => {
+    await adjustments.adjust("220", "10", "-1");
+  });
 });
