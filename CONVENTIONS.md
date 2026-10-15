@@ -1,4 +1,6 @@
-# lynx-style-catalog
+﻿# lynx-style-catalog
+
+Generated KAN-1 is scored with KAN-1-EXPECTED.md before anyone changes the generated files.
 
 This branch is a complete framework and test tree. It does not import `@core/playwright-framework` and it does not use the files from the other style branches.
 
@@ -17,3 +19,4 @@ This branch is a complete framework and test tree. It does not import `@core/pla
 ## Run
 
 `npm install`, then `npm run kan`.
+
