@@ -1,11 +1,8 @@
 import { expect, type Frame, type Page } from "@playwright/test";
-import { captureStep } from "./capture-step.js";
+import { shot } from "../support/shot.js";
+import type { JdeItem } from "../test-data/JdeItems.js";
 
-/**
- * Summary Availability is JD Edwards application P41202,
- * titled Work With Item Availability.
- * Fast Path is the menu path used to open it.
- */
+/** Work With Item Availability, fast path P41202. */
 export class SummaryAvailabilityPage {
   constructor(private readonly page: Page) {}
 
@@ -18,48 +15,39 @@ export class SummaryAvailabilityPage {
     await expect
       .poll(async () => (await this.page.title()).replace(/\u00a0/g, " "), { timeout: 60_000 })
       .toContain("Work With Item Availability");
-    await captureStep(this.page, "Summary Availability open");
+    await shot(this.page, "Summary Availability open");
   }
 
-  async search(itemNumber: string, branchPlant: string, resultName = "Find results"): Promise<void> {
+  async search(item: JdeItem, resultName = "Find results"): Promise<void> {
     const form = await this.form();
-    const item = form.locator("input[title='Item Number']");
+    const itemBox = form.locator("input[title='Item Number']");
     const branch = form.locator("input[title='Branch/Plant']");
-    await item.click();
-    await item.fill(itemNumber);
-    await item.press("Tab");
-    await captureStep(this.page, "Item number entered");
+    await itemBox.click();
+    await itemBox.fill(item.number);
+    await itemBox.press("Tab");
+    await shot(this.page, "Item number entered");
     await branch.click();
-    await branch.fill(branchPlant);
+    await branch.fill(item.branch);
     await branch.press("Tab");
-    await captureStep(this.page, "Branch/Plant entered");
+    await shot(this.page, "Branch/Plant entered");
     await form.locator("input[title='Omit Zero Quantities']").check();
-    await captureStep(this.page, "Omit zero quantities");
+    await shot(this.page, "Omit zero quantities");
     await form.locator("#hc_Find").click();
     await form.getByRole("row", { name: /^No Attachment P/ }).first().waitFor({ state: "visible", timeout: 30_000 }).catch(() => undefined);
-    await captureStep(this.page, resultName);
+    await shot(this.page, resultName);
   }
 
-  async readOnHand(branchPlant: string): Promise<string> {
+  async readOnHand(branchPlant: string): Promise<number> {
     let quantity = "";
-    await expect
-      .poll(
-        async () => {
-          quantity = await this.onHand(branchPlant);
-          return quantity;
-        },
-        { timeout: 30_000 },
-      )
-      .not.toBe("");
-    return quantity;
+    await expect.poll(async () => {
+      quantity = await this.onHand(branchPlant);
+      return quantity;
+    }, { timeout: 30_000 }).not.toBe("");
+    return Number(quantity);
   }
 
-  /**
-   * Data row cells are: checkbox, attachment, primary, location, branch, on hand.
-   * The total row is excluded because its name starts with TOTAL.
-   */
-  async expectOnHand(branchPlant: string, quantity: string): Promise<void> {
-    await expect.poll(async () => this.onHand(branchPlant), { timeout: 30_000 }).toBe(quantity);
+  async expectOnHandIncreased(branchPlant: string, before: number): Promise<void> {
+    await expect.poll(async () => this.onHand(branchPlant), { timeout: 30_000 }).toBe(String(before + 1));
   }
 
   private async onHand(branchPlant: string): Promise<string> {
@@ -79,10 +67,8 @@ export class SummaryAvailabilityPage {
   private async form(): Promise<Frame> {
     const deadline = Date.now() + 60_000;
     while (Date.now() < deadline) {
-      const frames = [...this.page.frames()].reverse();
-      for (const frame of frames) {
-        const item = frame.locator("input[title='Item Number']");
-        if (await item.count().catch(() => 0)) return frame;
+      for (const frame of [...this.page.frames()].reverse()) {
+        if (await frame.locator("input[title='Item Number']").count().catch(() => 0)) return frame;
       }
       await this.page.waitForTimeout(400);
     }

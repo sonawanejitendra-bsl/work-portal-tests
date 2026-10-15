@@ -1,20 +1,19 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "module": "Node16",
-    "moduleResolution": "Node16",
-    "lib": ["ES2022", "DOM"],
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
     "strict": true,
-    "noEmit": true,
     "skipLibCheck": true,
-    "types": ["node"]
+    "types": [
+      "node"
+    ],
+    "noEmit": true
   },
   "include": [
-    "playwright.config.ts",
-    "pages/**/*.ts",
-    "actions/**/*.ts",
-    "api/**/*.ts",
-    "healing/**/*.ts",
-    "tests/**/*.ts"
+    "./**/*.ts"
+  ],
+  "exclude": [
+    "node_modules"
   ]
 }
