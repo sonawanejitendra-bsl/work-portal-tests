@@ -1,0 +1,10 @@
+{
+  "item": "220",
+  "branch": "10",
+  "increase": "1",
+  "restore": "-1",
+  "explanation": "KAN-6",
+  "glDate": "01/31/2026",
+  "fastPathAvailability": "P41202",
+  "fastPathAdjust": "P4114"
+}

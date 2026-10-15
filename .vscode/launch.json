@@ -2,11 +2,13 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "KAN-6 with healed login",
-      "type": "node-terminal",
+      "type": "node",
       "request": "launch",
-      "command": "npm run demo",
-      "cwd": "${workspaceFolder}"
+      "name": "KAN-6 catalog",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "kan"],
+      "console": "integratedTerminal",
+      "skipFiles": ["<node_internals>/**"]
     }
   ]
 }
