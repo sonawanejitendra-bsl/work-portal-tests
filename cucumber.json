@@ -1,0 +1,6 @@
+{
+  "default": {
+    "paths": ["features/**/*.feature"],
+    "import": ["support/hooks.ts", "steps/**/*.ts"]
+  }
+}
