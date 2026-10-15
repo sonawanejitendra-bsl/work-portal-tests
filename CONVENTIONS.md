@@ -1,4 +1,6 @@
-# lynx-style-class-pom
+﻿# lynx-style-class-pom
+
+Generated KAN-1 is scored with KAN-1-EXPECTED.md before anyone changes the generated files.
 
 This branch is a complete framework and test tree. It does not import `@core/playwright-framework` and it does not use the files from the other style branches.
 
@@ -19,3 +21,4 @@ This branch is a complete framework and test tree. It does not import `@core/pla
 ## Run
 
 `npm install`, then `npm run kan`. Microsoft Edge is the browser. `PROFILE=ci` runs headless. `HEADED=1` shows the window.
+
