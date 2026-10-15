@@ -1,10 +1,9 @@
-.cursor/
 node_modules/
 test-results/
 playwright-report/
-blob-report/
 .auth/
 .env
+.cursor/
 *.log
 .DS_Store
 Thumbs.db
