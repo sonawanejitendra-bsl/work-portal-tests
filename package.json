@@ -1,32 +1,11 @@
 {
-  "name": "work-portal-tests",
+  "name": "lynx-style-robot",
   "private": true,
   "version": "0.1.0",
-  "description": "Application test repo for the work portal. Consumes @core/playwright-framework.",
-  "type": "module",
+  "description": "Standalone lynx-style-robot branch. This branch does not use the other style branches or @core/playwright-framework.",
   "scripts": {
-    "test": "playwright test",
-    "demo": "playwright test tests/jde-kan6-summary-availability.spec.ts --workers=1",
-    "kan": "playwright test tests/jde-kan6-summary-availability.spec.ts --workers=1",
-    "install:ffmpeg": "playwright install ffmpeg",
-    "report": "node scripts/open-report.mjs",
-    "test:smoke": "playwright test --grep @smoke",
-    "typecheck": "tsc --noEmit",
-    "lint": "eslint .",
-    "mcp:check": "node scripts/check-mcp.mjs",
-    "report:merge": "node scripts/merge-shard-reports.mjs",
-    "validate": "npm run typecheck && npm run lint && npm run mcp:check && npm test"
-  },
-  "devDependencies": {
-    "@core/playwright-framework": "github:sonawanejitendra-bsl/core-playwright-framework#3619b243c973147ce9855a261f09bd7e44fbe8c2",
-    "@eslint/js": "^9.36.0",
-    "@playwright/mcp": "^0.0.41",
-    "@playwright/test": "^1.55.0",
-    "@types/node": "^24.5.2",
-    "eslint": "^9.36.0",
-    "eslint-plugin-playwright": "^2.2.2",
-    "typescript": "^5.9.2",
-    "typescript-eslint": "^8.44.0"
+    "test": "python -m robot --pythonpath libraries --outputdir results tests",
+    "kan": "python -m robot --pythonpath libraries --outputdir results tests/kan6_summary_availability.robot"
   },
   "engines": {
     "node": ">=20"

@@ -1,0 +1,4 @@
+--pythonpath libraries
+--outputdir results
+--loglevel INFO
+tests/kan6_summary_availability.robot

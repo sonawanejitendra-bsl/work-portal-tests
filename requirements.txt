@@ -1,0 +1,4 @@
+robotframework>=7.1
+robotframework-seleniumlibrary>=6.6
+selenium>=4.25
+python-dotenv>=1.0
